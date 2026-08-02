@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <title>فاتورة استهلاك الماء</title>
+    <style>
+    body {{
+        background-color: #f3f4f6;
+        margin: 0;
+        font-family: 'Courier New', Tahoma, monospace;
+    }}
+    .receipt {{
+        background: #ffffff;
+        width: 320px;
+        padding: 20px;
+        box-sizing: border-box;
+        border: 1px solid #d1d5db;
+        color: #111827;
+        font-size: 14px;
+        line-height: 1.5;
+    }}
+    .header {{
+        text-align: center;
+        padding-bottom: 12px;
+        border-bottom: 1px dashed #9ca3af;
+        margin-bottom: 12px;
+    }}
+    .header h2 {{
+        font-size: 16px;
+        font-weight: bold;
+        margin: 0 0 4px 0;
+    }}
+    .header p {{
+        font-size: 11px;
+        color: #4b5563;
+        margin: 2px 0;
+    }}
+    .section {{
+        padding-bottom: 10px;
+        margin-bottom: 10px;
+        border-bottom: 1px dashed #9ca3af;
+    }}
+    .row {{
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 4px;
+        font-size: 12px;
+    }}
+    .row span:first-child {{
+        color: #4b5563;
+    }}
+    .row span:last-child {{
+        font-weight: bold;
+    }}
+    .consumption-total {{
+        border-top: 1px solid #e5e7eb;
+        padding-top: 4px;
+        margin-top: 4px;
+    }}
+    .total-row {{
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 8px 0;
+        border-bottom: 1px dashed #9ca3af;
+        margin-bottom: 12px;
+    }}
+    .total-row span {{
+        font-size: 15px;
+        font-weight: bold;
+    }}
+    .footer {{
+        text-align: center;
+    }}
+    .badge {{
+        display: inline-block;
+        padding: 4px 10px;
+        border: 1px solid #111827;
+        font-size: 11px;
+        font-weight: bold;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        margin-bottom: 6px;
+    }}
+    .footer p {{
+        font-size: 9px;
+        color: #9ca3af;
+        margin: 0;
+    }}
+</style>
+</head>
+<body>
+
+    <div class="receipt" id="capture-this">
+        <div class="header">
+            <h2>وصل استهلاك الماء</h2>
+            <p>جمعية التنمية والماء الصالح للشرب</p>
+            <p dir="ltr">28/2/2026 - 1/1/2026 :التاريخ</p>
+        </div>
+
+        <div class="section" >
+            <div class="row">
+                <span>رقم العداد:</span>
+                <span dir="ltr">#{meterNumber}</span>
+            </div>
+            <div class="row">
+                <span>اسم المشترك:</span>
+                <span>{fullName}</span>
+            </div>
+        </div>
+
+        <div class="section">
+            <div class="row">
+                <span>العداد السابق:</span>
+                <span dir="ltr">{previousReading} م³</span>
+            </div>
+            <div class="row">
+                <span>العداد الحالي:</span>
+                <span dir="ltr">{currentReading} م³</span>
+            </div>
+            <div class="row consumption-total">
+                <span>المستهلك:</span>
+                <span dir="ltr">{consumption} م³</span>
+            </div>
+        </div>
+
+        <div class="total-row">
+            <span>المبلغ الإجمالي:</span>
+            <span dir="ltr">{totalBill} درهم</span>
+        </div>
+
+        <div class="footer">
+            <div class="badge">تم الدفع / PAID</div>
+            <p>شكراً لتسوية مستحقاتكم في الوقت المحدد</p>
+        </div>
+    </div>
+
+</body>
+</html>

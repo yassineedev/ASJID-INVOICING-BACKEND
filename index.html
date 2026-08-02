@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>مركز أتمتة الفواتير</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+</head>
+
+<body class="bg-gray-50 min-h-screen text-gray-800 font-sans">
+
+    <div id="app" class="max-w-6xl mx-auto px-4 py-12">
+
+        <header class="text-center mb-12">
+            <h1 class="text-4xl font-extrabold text-gray-900 tracking-tight mb-2">
+                مركز أتمتة الفواتير
+            </h1>
+            <p class="text-lg text-gray-600 max-w-2xl mx-auto">
+                جلب بيانات العملاء في الوقت الفعلي، وتصفية الحسابات المدفوعة، وإنشاء فواتير صورية دفعة واحدة بنقرة زر واحدة.
+            </p>
+        </header>
+
+        <div
+            class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 mb-8 flex flex-col sm:flex-row items-center justify-between gap-4">
+
+            <div class="flex bg-gray-100 p-1 rounded-xl w-full sm:w-auto">
+                <button @click="currentFilter = 'all'"
+                    :class="['px-5 py-2 text-sm font-medium rounded-lg transition-all w-1/2 sm:w-auto text-center', currentFilter === 'all' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-900']">
+                    كل المستخدمين ({{ users.length }})
+                </button>
+                <button @click="currentFilter = 'paid'"
+                    :class="['px-5 py-2 text-sm font-medium rounded-lg transition-all w-1/2 sm:w-auto text-center', currentFilter === 'paid' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-900']">
+                    المدفوعة فقط ({{ paidUsersCount }})
+                </button>
+            </div>
+
+            <div class="w-full sm:w-auto flex flex-col items-center sm:items-start gap-2">
+                <button @click="downloadPaidBills" :disabled="isProcessing" :class="[
+            'w-full sm:w-auto px-6 py-3 font-semibold rounded-xl text-white shadow-md transition-all duration-200 flex items-center justify-center gap-2',
+            isProcessing ? 'bg-indigo-400 cursor-not-allowed' : 'bg-indigo-600 hover:bg-indigo-700 active:transform active:scale-98'
+          ]">
+                    <svg v-if="isProcessing" class="animate-spin h-5 w-5 text-white" fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4">
+                        </circle>
+                        <path class="opacity-75" fill="currentColor"
+                            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
+                        </path>
+                    </svg>
+                    {{ isProcessing ? 'جاري إنشاء وضغط الفواتير...' : 'إنشاء فواتير الحسابات المدفوعة (بنقرة واحدة)' }}
+                </button>
+            </div>
+        </div>
+
+        <div v-if="statusMessage"
+            :class="['mb-8 p-4 border rounded-xl flex items-center gap-3 animate-fade-in', 
+                  isError ? 'bg-rose-50 border-rose-200 text-rose-800' : 'bg-emerald-50 border-emerald-200 text-emerald-800']">
+            <svg v-if="!isError" class="h-6 w-6 text-emerald-600 shrink-0" fill="none" viewBox="0 0 24 24"
+                stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round"
+                    d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            <svg v-else class="h-6 w-6 text-rose-600 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"
+                stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round"
+                    d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+            </svg>
+            <span class="text-sm font-medium">{{ statusMessage }}</span>
+        </div>
+
+        <div v-if="isLoadingUsers" class="text-center py-20">
+            <p class="text-gray-500 text-lg">جاري جلب بيانات المستخدمين من السيرفر...</p>
+        </div>
+
+        <div v-else class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div v-for="user in filteredUsers" :key="user.rowIndex"
+                class="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow duration-200 flex flex-col justify-between">
+                <div>
+                    <div class="flex items-start justify-between mb-4">
+                        <div>
+                            <h3 class="font-bold text-gray-900 text-lg leading-snug">{{ user.fullName }}</h3>
+                            <p class="text-xs text-gray-400 mt-0.5">رقم العداد: #{{ user.meterNumber }}</p>
+                        </div>
+
+                        <span :class="[
+                'px-2.5 py-1 text-xs font-semibold rounded-full uppercase tracking-wider',
+                user.isPaid ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-rose-50 text-rose-700 border border-rose-200'
+              ]">
+                            {{ user.isPaid ? 'مدفوع' : 'غير مدفوع' }}
+                        </span>
+                    </div>
+
+                    <div class="border-t border-dashed border-gray-100 my-4"></div>
+
+                    <div class="flex justify-between items-center text-sm">
+                        <span class="text-gray-500">المبلغ المستحق:</span>
+                        <span class="font-bold text-gray-900 text-base">${{ parseFloat(user.totalBill).toFixed(2) }}</span>
+                    </div>
+                </div>
+
+                <div v-if="user.isPaid"
+                    class="mt-4 pt-3 border-t border-gray-50 flex items-center gap-1.5 text-xs text-indigo-600 font-medium">
+                    <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                        <path stroke-linecap="round" stroke-linejoin="round"
+                            d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                    </svg>
+                    مجدولة للتصدير كصورة
+                </div>
+            </div>
+        </div>
+
+        <div v-if="!isLoadingUsers && filteredUsers.length === 0"
+            class="text-center py-20 bg-white rounded-2xl border border-gray-100 shadow-sm mt-6">
+            <p class="text-gray-400">لا توجد بيانات مستخدمين تطابق معايير التصفية الحالية.</p>
+        </div>
+
+    </div>
+
+    <script>
+        const { createApp, ref, computed, onMounted } = Vue;
+
+        createApp({
+            setup() {
+                const BACKEND_URL = 'http://127.0.0.1:8000';
+
+                const users = ref([]);
+                const currentFilter = ref('all');
+                const isLoadingUsers = ref(false);
+                const isProcessing = ref(false);
+                const statusMessage = ref('');
+                const isError = ref(false);
+
+                const fetchUsers = async () => {
+                    isLoadingUsers.value = true;
+                    try {
+                        const response = await fetch(`${BACKEND_URL}/users`);
+                        if (!response.ok) throw new Error('فشل جلب البيانات من السيرفر الخلفي.');
+                        const data = await response.json();
+                        users.value = Array.isArray(data) ? data : (data.users || []);
+                    } catch (error) {
+                        console.error(error);
+                        users.value = [];
+                        isError.value = true;
+                        statusMessage.value = 'تعذر جلب المستخدمين من /users. تأكد من تشغيل السيرفر والسماح بالاتصال من الواجهة.';
+                    } finally {
+                        isLoadingUsers.value = false;
+                    }
+                };
+
+                const paidUsersCount = computed(() => {
+                    return users.value.filter(u => u.isPaid === true).length;
+                });
+
+                const filteredUsers = computed(() => {
+                    if (currentFilter.value === 'paid') {
+                        return users.value.filter(u => u.isPaid === true);
+                    }
+                    return users.value;
+                });
+
+                const downloadPaidBills = async () => {
+                    if (paidUsersCount.value === 0) {
+                        isError.value = true;
+                        statusMessage.value = "لا يوجد أي مستخدمين بحالة حساب مدفوعة لتوليد الفواتير لهم.";
+                        return;
+                    }
+
+                    isProcessing.value = true;
+                    statusMessage.value = '';
+                    isError.value = false;
+
+                    try {
+                        const response = await fetch(`${BACKEND_URL}/api/generate-paid-bills`, {
+                            method: 'GET',
+                        });
+
+                        if (!response.ok) {
+                            throw new Error('فشل السيرفر الخلفي في معالجة طلب الفواتير.');
+                        }
+
+                        const blob = await response.blob();
+                        const url = window.URL.createObjectURL(blob);
+                        const link = document.createElement('a');
+                        link.href = url;
+                        link.setAttribute('download', 'paid_bills.zip');
+                        document.body.appendChild(link);
+                        link.click();
+
+                        link.remove();
+                        window.URL.revokeObjectURL(url);
+
+                        isError.value = false;
+                        statusMessage.value = `تم بنجاح! تم إنشاء وتنزيل أرشيف الفواتير المدفوعة لـ (${paidUsersCount.value}) حسابات.`;
+                    } catch (error) {
+                        console.error(error);
+                        isError.value = true;
+                        statusMessage.value = 'حدث خطأ أثناء الاتصال بالـ FastAPI. تأكد من تشغيل السيرفر وتفعيل الـ CORS.';
+                    } finally {
+                        isProcessing.value = false;
+                    }
+                };
+
+                onMounted(() => {
+                    fetchUsers();
+                });
+
+                return {
+                    users,
+                    currentFilter,
+                    filteredUsers,
+                    paidUsersCount,
+                    isLoadingUsers,
+                    isProcessing,
+                    statusMessage,
+                    isError,
+                    downloadPaidBills
+                };
+            }
+        }).mount('#app');
+    </script>
+</body>
+
+</html> 
