@@ -1,37 +1,28 @@
 import sys
+import os
 from PySide6.QtWidgets import (
-    QApplication,
-    QMainWindow,
-    QWidget,
-    QLabel,
-    QPushButton,
-    QVBoxLayout,
-    QHBoxLayout,
-    QTableWidget,
-    QTableWidgetItem,
-    QLineEdit,
-    QFrame,
-    QHeaderView,
-    QProgressBar,
-    QDialog,
+    QApplication, QMainWindow, QWidget, QLabel, QPushButton,
+    QVBoxLayout, QHBoxLayout, QTableWidget, QTableWidgetItem,
+    QLineEdit, QFrame, QHeaderView, QProgressBar, QDialog,
     QGraphicsDropShadowEffect,
 )
 from PySide6.QtCore import Qt, QSize, QCoreApplication
 from PySide6.QtGui import QFont, QColor, QIcon
-# Import backend worker and generator
 from workers import FetchUsersWorker
 from invoice import Generator, GeneratorError
 from settings_dialog import SettingsDialog
 from settings_store import get_save_path
 
 
-# =============================================================================
-#  EASY MODERN DIALOG BASE
-# =============================================================================
+def resource_path(relative_path):
+    try:
+        base_path = sys._MEIPASS
+    except Exception:
+        base_path = os.path.abspath(".")
+    return os.path.join(base_path, relative_path)
+
 
 class ModernDialog(QDialog):
-    """Simple frameless dialog with a rounded white card and soft shadow."""
-
     def __init__(self, parent=None, width=480, height=260):
         super().__init__(parent)
         self.setWindowFlags(Qt.WindowType.FramelessWindowHint | Qt.WindowType.Dialog)
@@ -39,7 +30,6 @@ class ModernDialog(QDialog):
         self.setModal(True)
         self.setFixedSize(width, height)
 
-        # Rounded card
         self.card = QFrame(self)
         self.card.setObjectName("dialogCard")
         self.card.setStyleSheet("""
@@ -51,32 +41,29 @@ class ModernDialog(QDialog):
         """)
         self.card.setGeometry(12, 12, width - 24, height - 24)
 
-        # Soft shadow
         shadow = QGraphicsDropShadowEffect(self.card)
         shadow.setBlurRadius(50)
         shadow.setColor(QColor(0, 0, 0, 40))
         shadow.setOffset(0, 10)
         self.card.setGraphicsEffect(shadow)
 
-        # Content layout inside card
         self.layout = QVBoxLayout(self.card)
         self.layout.setContentsMargins(32, 32, 32, 32)
         self.layout.setSpacing(18)
 
     def add_icon(self, emoji, bg_color, text_color):
-        """Add a circular icon label."""
         icon = QLabel(emoji)
         icon.setFixedSize(68, 68)
         icon.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        icon.setStyleSheet(f"""
-            QLabel {{
-                background-color: {bg_color};
-                color: {text_color};
+        icon.setStyleSheet("""
+            QLabel {
+                background-color: %s;
+                color: %s;
                 border-radius: 34px;
                 font-size: 28px;
                 font-weight: 700;
-            }}
-        """)
+            }
+        """ % (bg_color, text_color))
         self.layout.addWidget(icon, alignment=Qt.AlignmentFlag.AlignCenter)
         return icon
 
@@ -105,8 +92,6 @@ class ModernDialog(QDialog):
 
 
 class CustomMessageBox:
-    """Same static API, but uses the new modern look."""
-
     @staticmethod
     def info(parent, title, text):
         dlg = ModernDialog(parent, 460, 300)
@@ -154,7 +139,7 @@ class CustomMessageBox:
     @staticmethod
     def critical(parent, title, text):
         dlg = ModernDialog(parent, 460, 320)
-        dlg.add_icon("✕", "#FEE2E2", "#DC2626")
+        dlg.add_icon("X", "#FEE2E2", "#DC2626")
         dlg.add_title(title)
         dlg.add_message(text)
         btn = QPushButton("Fermer")
@@ -204,10 +189,10 @@ class InvoiceProgressDialog(QDialog):
         layout.setContentsMargins(32, 32, 32, 32)
         layout.setSpacing(20)
 
-        self.title_label = QLabel("Génération des factures")
+        self.title_label = QLabel("Generation des factures")
         self.title_label.setStyleSheet("font-size: 20px; font-weight: 700; color: #0F172A;")
 
-        self.status_label = QLabel("Préparation...")
+        self.status_label = QLabel("Preparation...")
         self.status_label.setStyleSheet("font-size: 14px; color: #64748B;")
 
         self.progress_bar = QProgressBar()
@@ -229,7 +214,7 @@ class InvoiceProgressDialog(QDialog):
         """)
 
         info_row = QHBoxLayout()
-        self.counter_label = QLabel(f"0 / {total_items}")
+        self.counter_label = QLabel("0 / %d" % total_items)
         self.counter_label.setStyleSheet("font-size: 13px; color: #64748B; font-weight: 600;")
         self.percent_label = QLabel("0%")
         self.percent_label.setStyleSheet("font-size: 13px; color: #2563EB; font-weight: 700;")
@@ -265,26 +250,22 @@ class InvoiceProgressDialog(QDialog):
 
     def update_progress(self, current_val, user_name):
         self.progress_bar.setValue(current_val)
-        self.status_label.setText(f"Génération pour : {user_name}")
+        self.status_label.setText("Generation pour : %s" % user_name)
         total = self.progress_bar.maximum()
-        self.counter_label.setText(f"{current_val} / {total}")
+        self.counter_label.setText("%d / %d" % (current_val, total))
         if total > 0:
-            self.percent_label.setText(f"{int((current_val / total) * 100)}%")
+            self.percent_label.setText("%d%%" % int((current_val / total) * 100))
         QCoreApplication.processEvents()
 
     def wasCanceled(self):
         return self.is_canceled
 
 
-# =============================================================================
-#  MAIN APPLICATION
-# =============================================================================
-
 class WaterAssociationApp(QMainWindow):
     def __init__(self):
         super().__init__()
         self.setWindowTitle("ASJID")
-        self.setWindowIcon(QIcon("app_icon.ico"))
+        self.setWindowIcon(QIcon(resource_path("app_icon.ico")))
         self.resize(1440, 900)
         self.setMinimumSize(QSize(1280, 800))
 
@@ -296,9 +277,6 @@ class WaterAssociationApp(QMainWindow):
         self.init_ui()
         self.load_data_from_api()
 
-    # ------------------------------------------------------------------
-    # STYLES
-    # ------------------------------------------------------------------
     def setup_styles(self):
         self.setStyleSheet("""
             QMainWindow {
@@ -400,9 +378,6 @@ class WaterAssociationApp(QMainWindow):
             }
         """)
 
-    # ------------------------------------------------------------------
-    # UI CONSTRUCTION
-    # ------------------------------------------------------------------
     def init_ui(self):
         central_widget = QWidget()
         self.setCentralWidget(central_widget)
@@ -423,12 +398,12 @@ class WaterAssociationApp(QMainWindow):
         header_layout.setSpacing(6)
 
         title_label = QLabel(
-            "Association de la Jeunesse d'Idourhamane pour le Développement et la Coopération"
+            "Association de la Jeunesse d'Idourhamane pour le Developpement et la Cooperation"
         )
         title_label.setStyleSheet("font-size: 22px; font-weight: 700; color: #0F172A;")
         title_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
-        subtitle_label = QLabel("Système de Facturation d'Eau et de Gestion des Factures")
+        subtitle_label = QLabel("Systeme de Facturation d'Eau et de Gestion des Factures")
         subtitle_label.setStyleSheet(
             "font-size: 15px; color: #64748B; font-weight: 500;"
         )
@@ -439,15 +414,14 @@ class WaterAssociationApp(QMainWindow):
         return header_layout
 
     def build_stats_section(self):
-        """Simple stats row — no cards, no borders, just clean numbers."""
         stats_layout = QHBoxLayout()
         stats_layout.setSpacing(40)
         stats_layout.setContentsMargins(0, 12, 0, 12)
 
         stats_data = [
-            ("Tous les utilisateurs", "—", "#2563EB"),
-            ("Utilisateurs payés", "—", "#22C55E"),
-            ("Utilisateurs impayés", "—", "#EF4444"),
+            ("Tous les utilisateurs", "-", "#2563EB"),
+            ("Utilisateurs payes", "-", "#22C55E"),
+            ("Utilisateurs impayes", "-", "#EF4444"),
         ]
 
         self.stat_labels = {}
@@ -458,7 +432,7 @@ class WaterAssociationApp(QMainWindow):
 
             v_label = QLabel(value)
             v_label.setStyleSheet(
-                f"font-size: 36px; font-weight: 700; color: {color}; letter-spacing: -1px;"
+                "font-size: 36px; font-weight: 700; color: %s; letter-spacing: -1px;" % color
             )
             v_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
             self.stat_labels[title] = v_label
@@ -474,7 +448,6 @@ class WaterAssociationApp(QMainWindow):
         return stats_layout
 
     def build_controls_section(self):
-        """Simple controls row — no card frame."""
         layout = QHBoxLayout()
         layout.setSpacing(12)
         layout.setContentsMargins(0, 8, 0, 8)
@@ -485,13 +458,13 @@ class WaterAssociationApp(QMainWindow):
         self.btn_show_all.setCursor(Qt.CursorShape.PointingHandCursor)
         self.btn_show_all.clicked.connect(self.show_all_users_view)
 
-        self.btn_show_paid = QPushButton("Afficher les utilisateurs payés")
+        self.btn_show_paid = QPushButton("Afficher les utilisateurs payes")
         self.btn_show_paid.setProperty("class", "action-btn")
         self.btn_show_paid.setMinimumHeight(44)
         self.btn_show_paid.setCursor(Qt.CursorShape.PointingHandCursor)
         self.btn_show_paid.clicked.connect(self.show_paid_users_view)
 
-        self.btn_generate_invoices = QPushButton("Générer toutes les factures des utilisateurs payés")
+        self.btn_generate_invoices = QPushButton("Generer toutes les factures des utilisateurs payes")
         self.btn_generate_invoices.setProperty("class", "primary-btn")
         self.btn_generate_invoices.setMinimumHeight(44)
         self.btn_generate_invoices.setCursor(Qt.CursorShape.PointingHandCursor)
@@ -503,14 +476,13 @@ class WaterAssociationApp(QMainWindow):
         layout.addStretch()
         layout.addWidget(self.btn_generate_invoices)
 
-        # Search + refresh + settings on a second row
         search_row = QHBoxLayout()
         search_row.setSpacing(12)
         search_row.setContentsMargins(0, 8, 0, 0)
 
         self.search_input = QLineEdit()
         self.search_input.setPlaceholderText(
-            "Rechercher par numéro de compteur ou nom..."
+            "Rechercher par numero de compteur ou nom..."
         )
         self.search_input.setMinimumHeight(44)
         self.search_input.textChanged.connect(self.filter_table)
@@ -521,7 +493,7 @@ class WaterAssociationApp(QMainWindow):
         self.btn_refresh.setCursor(Qt.CursorShape.PointingHandCursor)
         self.btn_refresh.clicked.connect(self.load_data_from_api)
 
-        self.btn_settings = QPushButton("Paramètres")
+        self.btn_settings = QPushButton("Parametres")
         self.btn_settings.setProperty("class", "action-btn")
         self.btn_settings.setMinimumHeight(44)
         self.btn_settings.setCursor(Qt.CursorShape.PointingHandCursor)
@@ -550,7 +522,7 @@ class WaterAssociationApp(QMainWindow):
         self.table.setColumnCount(7)
         self.table.setHorizontalHeaderLabels(
             [
-                "Numéro de compteur",
+                "Numero de compteur",
                 "Nom complet",
                 "Ancienne lecture",
                 "Lecture actuelle",
@@ -573,7 +545,7 @@ class WaterAssociationApp(QMainWindow):
         status_layout = QHBoxLayout()
         status_layout.setContentsMargins(4, 4, 4, 0)
 
-        self.dot = QLabel("●")
+        self.dot = QLabel("*")
         self.dot.setStyleSheet("font-size: 11px; color: #22C55E;")
 
         self.status_label = QLabel("Connexion au serveur...")
@@ -581,7 +553,7 @@ class WaterAssociationApp(QMainWindow):
             "font-size: 13px; color: #334155; font-weight: 600;"
         )
 
-        version_label = QLabel("v1.0.0 — Édition Bureau")
+        version_label = QLabel("v1.0.0 - Edition Bureau")
         version_label.setStyleSheet("font-size: 12px; color: #94A3B8;")
 
         status_layout.addWidget(self.dot)
@@ -592,9 +564,6 @@ class WaterAssociationApp(QMainWindow):
 
         return status_layout
 
-    # ------------------------------------------------------------------
-    # API & THREADING INTEGRATION
-    # ------------------------------------------------------------------
     def load_data_from_api(self):
         self.set_loading_state(True)
         self.worker = FetchUsersWorker()
@@ -604,7 +573,7 @@ class WaterAssociationApp(QMainWindow):
     def set_loading_state(self, is_loading):
         if is_loading:
             self.loading_bar.show()
-            self.status_label.setText("Récupération des données du serveur...")
+            self.status_label.setText("Recuperation des donnees du serveur...")
             self.btn_show_all.setEnabled(False)
             self.btn_show_paid.setEnabled(False)
             self.btn_generate_invoices.setEnabled(False)
@@ -613,7 +582,7 @@ class WaterAssociationApp(QMainWindow):
             self.search_input.setEnabled(False)
             self.table.setRowCount(1)
             self.table.setSpan(0, 0, 1, 7)
-            placeholder = QTableWidgetItem("Chargement des données, veuillez patienter...")
+            placeholder = QTableWidgetItem("Chargement des donnees, veuillez patienter...")
             placeholder.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
             placeholder.setFlags(Qt.ItemFlag.NoItemFlags)
             font = QFont("Segoe UI", 14)
@@ -634,7 +603,7 @@ class WaterAssociationApp(QMainWindow):
         if error:
             self.set_loading_state(False)
             self.dot.setStyleSheet("font-size: 11px; color: #EF4444;")
-            self.status_label.setText(f"Erreur de connexion : {error}")
+            self.status_label.setText("Erreur de connexion : %s" % error)
             self.table.setRowCount(0)
             return
 
@@ -643,7 +612,7 @@ class WaterAssociationApp(QMainWindow):
                 self.set_loading_state(False)
                 self.dot.setStyleSheet("font-size: 11px; color: #EF4444;")
                 self.status_label.setText(
-                    f"Erreur API : {data.get('error', 'Erreur inconnue')}"
+                    "Erreur API : %s" % data.get("error", "Erreur inconnue")
                 )
                 self.table.setRowCount(0)
                 return
@@ -654,13 +623,13 @@ class WaterAssociationApp(QMainWindow):
             records = []
 
         self.dot.setStyleSheet("font-size: 11px; color: #22C55E;")
-        self.status_label.setText("Backend connecté  |  WhatsApp connecté  |  Prêt")
+        self.status_label.setText("Backend connecte  |  WhatsApp connecte  |  Pret")
 
         formatted_rows = []
         for item in records:
             if isinstance(item, dict):
                 is_paid = bool(item.get("isPaid", False))
-                status = "Payé" if is_paid else "Impayé"
+                status = "Paye" if is_paid else "Impaye"
                 consumption = item.get("consumptionM3", item.get("consumption", 0))
                 bill = item.get("totalBill", 0)
 
@@ -669,8 +638,8 @@ class WaterAssociationApp(QMainWindow):
                     str(item.get("fullName", "")),
                     str(item.get("previousReading", 0)),
                     str(item.get("currentReading", 0)),
-                    f"{consumption} m3",
-                    f"{bill} MAD",
+                    "%s m3" % consumption,
+                    "%s MAD" % bill,
                     status,
                 )
             else:
@@ -685,22 +654,19 @@ class WaterAssociationApp(QMainWindow):
 
     def update_statistics(self):
         total_count = len(self.raw_data)
-        paid_count = sum(1 for row in self.raw_data if row[6] == "Payé")
+        paid_count = sum(1 for row in self.raw_data if row[6] == "Paye")
         unpaid_count = total_count - paid_count
 
         if "Tous les utilisateurs" in self.stat_labels:
-            self.stat_labels["Tous les utilisateurs"].setText(f"{total_count:,}")
-        if "Utilisateurs payés" in self.stat_labels:
-            self.stat_labels["Utilisateurs payés"].setText(f"{paid_count:,}")
-        if "Utilisateurs impayés" in self.stat_labels:
-            self.stat_labels["Utilisateurs impayés"].setText(f"{unpaid_count:,}")
+            self.stat_labels["Tous les utilisateurs"].setText("%d" % total_count)
+        if "Utilisateurs payes" in self.stat_labels:
+            self.stat_labels["Utilisateurs payes"].setText("%d" % paid_count)
+        if "Utilisateurs impayes" in self.stat_labels:
+            self.stat_labels["Utilisateurs impayes"].setText("%d" % unpaid_count)
 
-    # ------------------------------------------------------------------
-    # DATA / VIEW LOGIC
-    # ------------------------------------------------------------------
     def get_active_source_data(self):
         if self.current_view == "paid":
-            return [row for row in self.raw_data if row[6] == "Payé"]
+            return [row for row in self.raw_data if row[6] == "Paye"]
         return self.raw_data
 
     def populate_table(self, data_rows):
@@ -718,7 +684,7 @@ class WaterAssociationApp(QMainWindow):
                     font.setPointSize(11)
                     badge_label.setFont(font)
 
-                    if text == "Payé":
+                    if text == "Paye":
                         badge_label.setStyleSheet(
                             "color: #166534; background-color: #DCFCE7; "
                             "border-radius: 8px; padding: 6px 16px; font-weight: 700; font-size: 12px;"
@@ -781,7 +747,7 @@ class WaterAssociationApp(QMainWindow):
         self._set_toggle_state(self.btn_show_paid, self.btn_show_all)
         self.btn_generate_invoices.show()
         self.search_input.clear()
-        paid_data = [row for row in self.raw_data if row[6] == "Payé"]
+        paid_data = [row for row in self.raw_data if row[6] == "Paye"]
         self.populate_table(paid_data)
 
     def open_settings_dialog(self):
@@ -798,8 +764,8 @@ class WaterAssociationApp(QMainWindow):
         if not paid_users:
             CustomMessageBox.warning(
                 self,
-                "Aucun utilisateur payé",
-                "Il n'y a pas d'utilisateurs payés pour lesquels générer des factures.",
+                "Aucun utilisateur paye",
+                "Il n'y a pas d'utilisateurs payes pour lesquels generer des factures.",
             )
             return
 
@@ -814,35 +780,49 @@ class WaterAssociationApp(QMainWindow):
             for i in range(total):
                 if progress.wasCanceled():
                     break
-                user_name = paid_users[i].get("fullName", f"Utilisateur {i+1}")
+                user_name = paid_users[i].get("fullName", "Utilisateur %d" % (i + 1))
                 progress.update_progress(i, user_name)
 
             if not progress.wasCanceled():
                 generator.generate_bills()
-                progress.update_progress(total, "Terminé !")
+                progress.update_progress(total, "Termine !")
 
         except GeneratorError as e:
             progress.close()
             CustomMessageBox.critical(
                 self,
-                "Échec de la génération des factures",
-                f"Impossible de générer les factures :\n{e}",
+                "Echec de la generation des factures",
+                "Impossible de generer les factures : %s" % e,
             )
             return
 
         progress.close()
         if not progress.wasCanceled():
+            msg = (
+                "Factures generees avec succes pour %d utilisateurs payes.\n\n"
+                "Une file d'attente d'envoi WhatsApp (whatsapp_queue.json) a egalement ete creee "
+                "dans le dossier de sauvegarde pour l'extension Chrome."
+            ) % len(paid_users)
             CustomMessageBox.info(
                 self,
-                "Factures générées",
-                f"Factures générées avec succès pour {len(paid_users)} utilisateurs payés.\n\n"
-                f"Une file d'attente d'envoi WhatsApp (whatsapp_queue.json) a également été créée "
-                f"dans le dossier de sauvegarde pour l'extension Chrome.",
+                "Factures generees",
+                msg,
             )
 
 
 if __name__ == "__main__":
+    try:
+        import ctypes
+        ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID("ASJID.GestionEauApp.1.0")
+    except Exception:
+        pass
+
     app = QApplication(sys.argv)
+
+    icon_path = resource_path("app_icon.ico")
+    if os.path.exists(icon_path):
+        app.setWindowIcon(QIcon(icon_path))
+
     window = WaterAssociationApp()
     window.show()
     sys.exit(app.exec())
