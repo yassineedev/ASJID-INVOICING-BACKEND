@@ -28,7 +28,7 @@ class Generator:
 
     def __init__(self, users, save_path=None):
         self.users = users
-        # Fixed: Safely resolves path for local development and PyInstaller .exe bundle
+        # Correctly resolves to the bundled template folder inside the .exe
         self.p = resource_path(os.path.join("template", "v.html"))
         
         # Use the path configured in Settings unless the caller
