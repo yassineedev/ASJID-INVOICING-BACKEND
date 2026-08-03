@@ -24,13 +24,8 @@ jobs:
           pip install pyinstaller PySide6 Pillow requests
 
       - name: Build Windows Executable
-        run: |
-          cd Graphic
-          pyinstaller --noconsole --onefile --clean ^
-            --icon="app_icon.ico" ^
-            --add-data "app_icon.ico;." ^
-            --name="GestionEauApp" ^
-            main.py
+        shell: cmd
+        run: cd Graphic && pyinstaller --noconsole --onefile --clean --icon="app_icon.ico" --add-data "app_icon.ico;." --name="GestionEauApp" main.py
 
       - name: Upload Windows Executable
         uses: actions/upload-artifact@v4
