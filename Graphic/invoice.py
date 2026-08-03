@@ -1,11 +1,21 @@
 from html2image import Html2Image
 from PIL import Image
 import os
+import sys
 import json
 import re
 from datetime import datetime, timezone
 
 from settings_store import get_save_path
+
+
+def resource_path(relative_path):
+    """Get absolute path to resource, works for dev and for PyInstaller"""
+    try:
+        base_path = sys._MEIPASS
+    except Exception:
+        base_path = os.path.abspath(".")
+    return os.path.join(base_path, relative_path)
 
 
 class GeneratorError(Exception):
@@ -18,7 +28,9 @@ class Generator:
 
     def __init__(self, users, save_path=None):
         self.users = users
-        self.p = "/home/enissay/project/bills-generator/Graphic/template/v.html"
+        # Fixed: Safely resolves path for local development and PyInstaller .exe bundle
+        self.p = resource_path(os.path.join("template", "v.html"))
+        
         # Use the path configured in Settings unless the caller
         # explicitly overrides it (e.g. for tests).
         self.path_to_save = save_path or get_save_path()
@@ -155,20 +167,7 @@ class Generator:
             raise GeneratorError(e)
 
     def _write_queue_manifest(self, queue, skipped):
-        """Writes whatsapp_queue.json alongside the generated images.
-
-        The Chrome extension is expected to:
-          1. Load this file (e.g. via a file input, or a small local
-             server pointed at the save folder).
-          2. Iterate `queue` in order, find each contact on WhatsApp
-             Web using `phone` / `whatsappNumber`, attach `invoiceFile`
-             from the same folder, send `message`, then move to the
-             next entry - looping until the array is exhausted.
-          3. Entries in `skipped` have no usable phone number and
-             should be surfaced to the user rather than silently
-             dropped, since those invoices still need to be delivered
-             some other way (in person, SMS, etc.).
-        """
+        """Writes whatsapp_queue.json alongside the generated images."""
         manifest = {
             "generatedAt": datetime.now(timezone.utc).isoformat(),
             "saveFolder": self.path_to_save,
