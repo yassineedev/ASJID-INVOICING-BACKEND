@@ -31,5 +31,5 @@ jobs:
       - name: Upload Windows Executable
         uses: actions/upload-artifact@v4
         with:
-          name: ASJID-Windows
-          path: Graphic/dist/ASJID.exe
+          name: GestionEauApp-Windows
+          path: Graphic/dist/GestionEauApp.exe
