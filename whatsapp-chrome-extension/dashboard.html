@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Water Bill WhatsApp Sender - Dashboard</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Arial, sans-serif;
+            background-color: #F1F4F8;
+            color: #1E293B;
+            margin: 0;
+            padding: 40px;
+            display: flex;
+            justify-content: center;
+        }
+        .container {
+            background: #FFFFFF;
+            border: 1px solid #DCE3EC;
+            border-radius: 12px;
+            padding: 30px;
+            width: 520px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+        }
+        h2 {
+            margin-top: 0;
+            color: #0F172A;
+            font-size: 20px;
+        }
+        .card {
+            border: 1px solid #E2E8F0;
+            border-radius: 8px;
+            padding: 16px;
+            margin-bottom: 16px;
+            background: #F8FAFC;
+        }
+        label {
+            display: block;
+            font-size: 13px;
+            font-weight: 600;
+            margin-bottom: 6px;
+            color: #334155;
+        }
+        input[type="file"] {
+            width: 100%;
+            font-size: 13px;
+        }
+        #stats {
+            font-size: 13px;
+            color: #475569;
+            margin-bottom: 20px;
+            line-height: 1.6;
+        }
+        #progress {
+            display: none;
+            font-size: 13px;
+            color: #1E293B;
+            background: #EFF6FF;
+            border: 1px solid #BFDBFE;
+            border-radius: 8px;
+            padding: 14px;
+            margin-top: 16px;
+            line-height: 1.6;
+        }
+        .btn-row {
+            display: flex;
+            gap: 10px;
+            margin-top: 6px;
+        }
+        button {
+            background-color: #2563EB;
+            color: #FFFFFF;
+            border: none;
+            border-radius: 6px;
+            padding: 12px 20px;
+            font-size: 15px;
+            font-weight: 600;
+            flex: 1;
+            cursor: pointer;
+        }
+        button:hover:not(:disabled) {
+            background-color: #1D4ED8;
+        }
+        button:disabled {
+            background-color: #94A3B8;
+            cursor: not-allowed;
+        }
+        #stopBtn {
+            background-color: #DC2626;
+        }
+        #stopBtn:hover:not(:disabled) {
+            background-color: #B91C1C;
+        }
+        #downloadReportBtn {
+            background-color: #16A34A;
+            margin-top: 12px;
+        }
+        #downloadReportBtn:hover:not(:disabled) {
+            background-color: #15803D;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>Water Bill WhatsApp Sender</h2>
+
+        <div class="card">
+            <label for="jsonFile">1. Select JSON Report File:</label>
+            <input type="file" id="jsonFile" accept=".json">
+        </div>
+
+        <div class="card">
+            <label for="imageFolder">2. Select Images Folder (e.g. /generated):</label>
+            <input type="file" id="imageFolder" webkitdirectory directory multiple>
+        </div>
+
+        <div id="stats">
+            Awaiting files selection...
+        </div>
+
+        <div class="btn-row">
+            <button id="startBtn" disabled>Start WhatsApp Queue</button>
+            <button id="stopBtn" disabled>Stop</button>
+        </div>
+
+        <div id="progress"></div>
+
+        <button id="downloadReportBtn" disabled>Download Send Report</button>
+    </div>
+
+    <script src="dashboard.js"></script>
+</body>
+</html>
