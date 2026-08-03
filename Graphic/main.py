@@ -15,11 +15,9 @@ from PySide6.QtWidgets import (
     QProgressBar,
     QDialog,
     QGraphicsDropShadowEffect,
-    QIcon,
 )
 from PySide6.QtCore import Qt, QSize, QCoreApplication
-from PySide6.QtGui import QFont, QColor
-
+from PySide6.QtGui import QFont, QColor, QIcon
 # Import backend worker and generator
 from workers import FetchUsersWorker
 from invoice import Generator, GeneratorError
