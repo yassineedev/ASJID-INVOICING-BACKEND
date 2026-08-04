@@ -7,7 +7,7 @@ class WaterApiClient:
 
     def fetch_users(self):
         try:
-            response = requests.get(self.base_url, timeout=30)
+            response = requests.get(self.base_url, timeout=15)
             response.raise_for_status()
             return response.json(), None
         except requests.exceptions.RequestException as e:
