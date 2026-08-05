@@ -8,17 +8,26 @@ Rebuilt analytical logic for real-world village water management:
 """
 
 from PySide6.QtWidgets import (
-    QWidget, QLabel, QPushButton, QVBoxLayout, QHBoxLayout,
-    QFrame, QLineEdit, QTableWidget, QTableWidgetItem, QHeaderView,
-    QGraphicsDropShadowEffect, QDoubleSpinBox,
+    QWidget,
+    QLabel,
+    QPushButton,
+    QVBoxLayout,
+    QHBoxLayout,
+    QFrame,
+    QLineEdit,
+    QTableWidget,
+    QTableWidgetItem,
+    QHeaderView,
+    QGraphicsDropShadowEffect,
+    QDoubleSpinBox,
 )
 from PySide6.QtCore import Qt, Signal
 from PySide6.QtGui import QColor, QFont, QPainter, QBrush, QPen, QLinearGradient
 
-
 # ═══════════════════════════════════════════════════════════════════════════
 #  MINI WIDGETS
 # ═══════════════════════════════════════════════════════════════════════════
+
 
 class KpiCard(QFrame):
     def __init__(self, value, label, color, parent=None):
@@ -43,10 +52,15 @@ class KpiCard(QFrame):
         layout.setSpacing(4)
 
         v = QLabel(value)
-        v.setStyleSheet("font-size: 26px; font-weight: 800; color: %s; letter-spacing: -0.5px;" % color)
+        v.setStyleSheet(
+            "font-size: 26px; font-weight: 800; color: %s; letter-spacing: -0.5px;"
+            % color
+        )
 
         l = QLabel(label)
-        l.setStyleSheet("font-size: 12px; font-weight: 600; color: #94A3B8; letter-spacing: 0.5px;")
+        l.setStyleSheet(
+            "font-size: 12px; font-weight: 600; color: #94A3B8; letter-spacing: 0.5px;"
+        )
 
         layout.addWidget(v)
         layout.addWidget(l)
@@ -63,9 +77,9 @@ class RankBadge(QWidget):
         painter.setRenderHint(QPainter.RenderHint.Antialiasing)
 
         colors = {
-            1: ("#F59E0B", "#FFFFFF"),   # Gold
-            2: ("#94A3B8", "#FFFFFF"),   # Silver
-            3: ("#B45309", "#FFFFFF"),   # Bronze
+            1: ("#F59E0B", "#FFFFFF"),  # Gold
+            2: ("#94A3B8", "#FFFFFF"),  # Silver
+            3: ("#B45309", "#FFFFFF"),  # Bronze
         }
         bg, fg = colors.get(self.rank, ("#E2E8F0", "#64748B"))
 
@@ -139,14 +153,15 @@ class AlertPill(QWidget):
 #  MAIN DASHBOARD
 # ═══════════════════════════════════════════════════════════════════════════
 
+
 class ConsumptionDashboard(QWidget):
     back_signal = Signal()
     request_refresh_signal = Signal()
 
     def __init__(self, parent=None):
         super().__init__(parent)
-        self._data = []          
-        self._filtered = []      
+        self._data = []
+        self._filtered = []
         self._max_consumption = 1.0
         self.init_ui()
 
@@ -272,16 +287,20 @@ class ConsumptionDashboard(QWidget):
         toolbar.setSpacing(12)
 
         self._search = QLineEdit()
-        self._search.setPlaceholderText("🔍  Rechercher par nom ou numéro de compteur...")
+        self._search.setPlaceholderText(
+            "🔍  Rechercher par nom ou numéro de compteur..."
+        )
         self._search.setMinimumHeight(42)
         self._search.textChanged.connect(self._on_search)
 
         # Rebuilt control: Absolute Volume Threshold instead of an abstract ratio
         threshold_container = QHBoxLayout()
         threshold_container.setSpacing(6)
-        
+
         lbl_threshold = QLabel("Seuil Alerte (m³):")
-        lbl_threshold.setStyleSheet("font-size: 13px; font-weight: 600; color: #475569;")
+        lbl_threshold.setStyleSheet(
+            "font-size: 13px; font-weight: 600; color: #475569;"
+        )
 
         self._threshold_spin = QDoubleSpinBox()
         self._threshold_spin.setRange(5.0, 100.0)
@@ -340,13 +359,21 @@ class ConsumptionDashboard(QWidget):
         # Table
         self._table = QTableWidget()
         self._table.setColumnCount(6)
-        self._table.setHorizontalHeaderLabels([
-            "RANG", "COMPTEUR", "NOM", "CONSOMMATION", "VISUEL", "STATUT / ALERTE"
-        ])
-        self._table.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Stretch)
-        self._table.horizontalHeader().setSectionResizeMode(0, QHeaderView.ResizeMode.Fixed)
-        self._table.horizontalHeader().setSectionResizeMode(3, QHeaderView.ResizeMode.Fixed)
-        self._table.horizontalHeader().setSectionResizeMode(5, QHeaderView.ResizeMode.Fixed)
+        self._table.setHorizontalHeaderLabels(
+            ["RANG", "COMPTEUR", "NOM", "CONSOMMATION", "VISUEL", "STATUT / ALERTE"]
+        )
+        self._table.horizontalHeader().setSectionResizeMode(
+            QHeaderView.ResizeMode.Stretch
+        )
+        self._table.horizontalHeader().setSectionResizeMode(
+            0, QHeaderView.ResizeMode.Fixed
+        )
+        self._table.horizontalHeader().setSectionResizeMode(
+            3, QHeaderView.ResizeMode.Fixed
+        )
+        self._table.horizontalHeader().setSectionResizeMode(
+            5, QHeaderView.ResizeMode.Fixed
+        )
         self._table.setColumnWidth(0, 60)
         self._table.setColumnWidth(3, 120)
         self._table.setColumnWidth(5, 160)
@@ -371,19 +398,28 @@ class ConsumptionDashboard(QWidget):
         for item in records:
             if not isinstance(item, dict):
                 continue
-            
+
             meter = str(
-                item.get("meterNumber") or item.get("meter") or 
-                item.get("Compteur") or item.get("numero") or ""
+                item.get("meterNumber")
+                or item.get("meter")
+                or item.get("Compteur")
+                or item.get("numero")
+                or ""
             )
             name = str(
-                item.get("fullName") or item.get("name") or 
-                item.get("Nom") or item.get("client") or ""
+                item.get("fullName")
+                or item.get("name")
+                or item.get("Nom")
+                or item.get("client")
+                or ""
             )
-            
+
             raw_cons = (
-                item.get("consumptionM3") or item.get("consumption") or 
-                item.get("consommation") or item.get("current") or 0.0
+                item.get("consumptionM3")
+                or item.get("consumption")
+                or item.get("consommation")
+                or item.get("current")
+                or 0.0
             )
             try:
                 cons = float(raw_cons)
@@ -395,21 +431,26 @@ class ConsumptionDashboard(QWidget):
                 cons = 0.0
 
             raw_prev = (
-                item.get("previousConsumptionM3") or item.get("previousConsumption") or 
-                item.get("previous") or item.get("ancien") or 0.0
+                item.get("previousConsumptionM3")
+                or item.get("previousConsumption")
+                or item.get("previous")
+                or item.get("ancien")
+                or 0.0
             )
             try:
                 prev = float(raw_prev)
             except (ValueError, TypeError):
                 prev = 0.0
 
-            normalized_records.append({
-                "meterNumber": meter,
-                "fullName": name,
-                "consumptionM3": cons,
-                "previousConsumptionM3": prev,
-                "isPaid": bool(item.get("isPaid", item.get("paid", False)))
-            })
+            normalized_records.append(
+                {
+                    "meterNumber": meter,
+                    "fullName": name,
+                    "consumptionM3": cons,
+                    "previousConsumptionM3": prev,
+                    "isPaid": bool(item.get("isPaid", item.get("paid", False))),
+                }
+            )
 
         # CRITICAL FIX: Always sort highest consumer to lowest (Rank #1 = Highest user)
         normalized_records.sort(key=lambda x: x["consumptionM3"], reverse=True)
@@ -418,7 +459,9 @@ class ConsumptionDashboard(QWidget):
         self._filtered = self._data[:]
         self._compute_stats()
         self._populate_table()
-        self._status.setText("Données synchronisées — %d compteurs analysés" % len(self._data))
+        self._status.setText(
+            "Données synchronisées — %d compteurs analysés" % len(self._data)
+        )
 
     def _compute_stats(self):
         if not self._data:
@@ -435,7 +478,9 @@ class ConsumptionDashboard(QWidget):
 
         self._kpi_total.layout().itemAt(0).widget().setText("%.1f m³" % total)
         self._kpi_avg.layout().itemAt(0).widget().setText("%.1f m³" % avg)
-        self._kpi_max.layout().itemAt(0).widget().setText("%.1f m³" % self._max_consumption)
+        self._kpi_max.layout().itemAt(0).widget().setText(
+            "%.1f m³" % self._max_consumption
+        )
         self._kpi_active.layout().itemAt(0).widget().setText("%d" % len(values))
 
     def _on_search(self):
@@ -444,7 +489,8 @@ class ConsumptionDashboard(QWidget):
             self._filtered = self._data[:]
         else:
             self._filtered = [
-                r for r in self._data
+                r
+                for r in self._data
                 if query in str(r.get("fullName", "")).lower()
                 or query in str(r.get("meterNumber", "")).lower()
             ]
@@ -477,7 +523,9 @@ class ConsumptionDashboard(QWidget):
 
             # Name
             item_name = QTableWidgetItem(name)
-            item_name.setTextAlignment(Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter)
+            item_name.setTextAlignment(
+                Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter
+            )
             self._table.setItem(i, 2, item_name)
 
             # Consumption value

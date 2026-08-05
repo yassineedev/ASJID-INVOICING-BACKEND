@@ -8,6 +8,7 @@ from PySide6.QtGui import QIcon
 from UI.home_ui import HomeView
 from UI.invoice_ui import BillingView
 from UI.consomation_board_ui import ConsumptionDashboard
+from UI.finance_dashboard_ui import FinanceDashboard
 from workers import FetchUsersWorker
 
 
@@ -41,19 +42,23 @@ class MainAssociationApp(QMainWindow):
         self.home_view = HomeView()
         self.billing_view = BillingView()
         self.consomation_view = ConsumptionDashboard()
+        self.finance_view = FinanceDashboard()
 
         # Connect navigation signals directly to page switcher
         self.home_view.navigate_signal.connect(self.switch_page)
         self.billing_view.navigate_signal.connect(self.switch_page)
         self.consomation_view.back_signal.connect(lambda: self.switch_page(0))
+        self.finance_view.back_signal.connect(lambda: self.switch_page(0))
         
-        # Connect refresh signal to trigger the central pipeline worker
+        # Connect refresh signals to trigger the central pipeline worker
         self.consomation_view.request_refresh_signal.connect(self.run_fetch_pipeline)
+        self.finance_view.request_refresh_signal.connect(self.run_fetch_pipeline)
 
-        # Add to Stack with exact indices
+        # Add to Stack with exact indices matching HomeView page_index mappings
         self.stacked_widget.addWidget(self.home_view)          # Index 0: Home Page
-        self.stacked_widget.addWidget(self.billing_view)       # Index 1: Billing View
+        self.stacked_widget.addWidget(self.billing_view)       # Index 1: Billing / Invoices View
         self.stacked_widget.addWidget(self.consomation_view)   # Index 2: Consumption Dashboard
+        self.stacked_widget.addWidget(self.finance_view)       # Index 3: Financial Management Dashboard
 
         self.stacked_widget.setCurrentIndex(0)
 
@@ -71,7 +76,7 @@ class MainAssociationApp(QMainWindow):
         self.worker.start()
 
     def distribute_pipeline_data(self, records, error):
-        """Pipeline dispatcher: receives records and broadcasts them to both pages."""
+        """Pipeline dispatcher: receives records and broadcasts them to all views."""
         if error:
             print(f"Pipeline Error: {error}")
             return
@@ -82,7 +87,10 @@ class MainAssociationApp(QMainWindow):
             # 1. Pipeline records to Consumption Dashboard
             self.consomation_view.set_data(records)
 
-            # 2. Pipeline records to Billing View
+            # 2. Pipeline records to Financial Dashboard
+            self.finance_view.set_data(records)
+
+            # 3. Pipeline records to Billing View
             if hasattr(self.billing_view, "set_data"):
                 self.billing_view.set_data(records)
             elif hasattr(self.billing_view, "load_records"):

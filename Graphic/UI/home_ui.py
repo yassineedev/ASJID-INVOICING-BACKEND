@@ -38,9 +38,9 @@ class AmbientBackground(QWidget):
         painter.drawEllipse(int(w * 0.3), int(-h * 0.1), int(w * 0.9), int(h * 0.7))
 
         orb2 = QRadialGradient(w * 0.2, h * 0.8, w * 0.4)
-        orb2.setColorAt(0.0, QColor(16, 185, 129, 14))
-        orb2.setColorAt(0.5, QColor(16, 185, 129, 5))
-        orb2.setColorAt(1.0, QColor(16, 185, 129, 0))
+        orb2.setColorAt(0.0, QColor(124, 58, 237, 14))
+        orb2.setColorAt(0.5, QColor(124, 58, 237, 5))
+        orb2.setColorAt(1.0, QColor(124, 58, 237, 0))
         painter.setBrush(QBrush(orb2))
         painter.drawEllipse(int(-w * 0.15), int(h * 0.45), int(w * 0.7), int(h * 0.6))
 
@@ -63,10 +63,14 @@ class IconBadge(QWidget):
             grad = QLinearGradient(0, 0, s, s)
             grad.setColorAt(0.0, QColor("#3B82F6"))
             grad.setColorAt(1.0, QColor("#2563EB"))
-        else:
+        elif self.icon_type == "analytics":
             grad = QLinearGradient(0, 0, s, s)
             grad.setColorAt(0.0, QColor("#10B981"))
             grad.setColorAt(1.0, QColor("#059669"))
+        else:  # finance
+            grad = QLinearGradient(0, 0, s, s)
+            grad.setColorAt(0.0, QColor("#8B5CF6"))
+            grad.setColorAt(1.0, QColor("#7C3AED"))
 
         painter.setBrush(QBrush(grad))
         painter.setPen(Qt.PenStyle.NoPen)
@@ -83,8 +87,10 @@ class IconBadge(QWidget):
 
         if self.icon_type == "invoice":
             self._draw_invoice(painter, s)
-        else:
+        elif self.icon_type == "analytics":
             self._draw_analytics(painter, s)
+        else:
+            self._draw_finance(painter, s)
 
     def _draw_invoice(self, p, s):
         doc_w, doc_h = s * 0.44, s * 0.50
@@ -117,6 +123,17 @@ class IconBadge(QWidget):
             p.setBrush(QBrush(QColor("#FFFFFF")))
             p.drawRoundedRect(int(x), int(y), int(bar_w), int(h + 4), 3, 3)
 
+    def _draw_finance(self, p, s):
+        w_rect, h_rect = s * 0.52, s * 0.36
+        x, y = (s - w_rect) / 2, (s - h_rect) / 2
+        p.setPen(QPen(QColor("#FFFFFF"), 2.2))
+        p.setBrush(Qt.BrushStyle.NoBrush)
+        p.drawRoundedRect(int(x), int(y), int(w_rect), int(h_rect), 6, 6)
+        p.setBrush(QBrush(QColor("#FFFFFF")))
+        p.setPen(Qt.PenStyle.NoPen)
+        p.drawRect(int(x), int(y + h_rect * 0.25), int(w_rect), int(h_rect * 0.2))
+        p.drawRoundedRect(int(x + w_rect * 0.15), int(y + h_rect * 0.6), int(w_rect * 0.2), int(h_rect * 0.22), 3, 3)
+
 
 class ModuleCard(QFrame):
     """Premium interactive card using native QSS hover states (100% crash-free)."""
@@ -128,11 +145,10 @@ class ModuleCard(QFrame):
         self.accent_color = accent_color
         self.hover_color = hover_color
 
-        self.setFixedSize(340, 400)
+        self.setFixedSize(320, 400)
         self.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
         self.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
 
-        # Stable static drop shadow
         self._shadow = QGraphicsDropShadowEffect(self)
         self._shadow.setBlurRadius(28)
         self._shadow.setColor(QColor(0, 0, 0, 18))
@@ -170,7 +186,6 @@ class ModuleCard(QFrame):
         action_row.addStretch()
         self._layout.addLayout(action_row)
 
-        # Native QSS pseudo-states handle hover smoothly without C++ object deletion
         self.setStyleSheet("""
             ModuleCard {
                 background-color: #FFFFFF;
@@ -247,7 +262,7 @@ class HomeView(QWidget):
 
         cards_row = QHBoxLayout()
         cards_row.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        cards_row.setSpacing(32)
+        cards_row.setSpacing(24)
 
         self._card_invoice = ModuleCard(
             icon_type="invoice",
@@ -271,8 +286,20 @@ class HomeView(QWidget):
             parent=self,
         )
 
+        self._card_finance = ModuleCard(
+            icon_type="finance",
+            accent_color="#7C3AED",
+            hover_color="#6D28D9",
+            title="Gestion Financière",
+            description="Suivez les entrées prévues, les paiements encaissés et le bilan de recouvrement.",
+            action_text="Ouvrir le module",
+            page_index=3,
+            parent=self,
+        )
+
         cards_row.addWidget(self._card_invoice)
         cards_row.addWidget(self._card_analytics)
+        cards_row.addWidget(self._card_finance)
 
         footer = QVBoxLayout()
         footer.setAlignment(Qt.AlignmentFlag.AlignCenter)
@@ -301,7 +328,7 @@ class HomeView(QWidget):
         super().resizeEvent(event)
 
     def _animate_entrance(self):
-        widgets = [self._title, self._subtitle, self._card_invoice, self._card_analytics]
+        widgets = [self._title, self._subtitle, self._card_invoice, self._card_analytics, self._card_finance]
         for w in widgets:
             eff = QGraphicsOpacityEffect(w)
             w.setGraphicsEffect(eff)
@@ -321,3 +348,4 @@ class HomeView(QWidget):
         make_fade(self._subtitle, 200)
         make_fade(self._card_invoice, 350)
         make_fade(self._card_analytics, 500)
+        make_fade(self._card_finance, 650)
